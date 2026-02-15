@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "anakin-cli"
+version = "0.1.0"
+description = "CLI for Anakin.io web scraping, search, and research API"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Anakin.io" }]
+keywords = [
+    "web-scraping",
+    "search",
+    "research",
+    "data-extraction",
+    "cli",
+    "ai",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Utilities",
+]
+dependencies = ["requests>=2.28", "rich>=13.0"]
+
+[project.urls]
+Homepage = "https://anakin.io"
+Repository = "https://github.com/Anakin-Inc/anakin-cli"
+Documentation = "https://anakin.io/docs"
+
+[project.scripts]
+anakin = "anakin_cli.cli:main"
