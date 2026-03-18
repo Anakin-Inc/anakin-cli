@@ -188,11 +188,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--api-url", default=None, help="API base URL (default: https://api.anakin.io/v1). Use http://localhost:8080/v1 for self-hosted.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    _api_url_help = "API base URL (default: https://api.anakin.io/v1). Use http://localhost:8080 for self-hosted."
+
     # --- search ---
     p_search = subparsers.add_parser("search", help="AI web search (sync)")
     p_search.add_argument("query", help="Search query")
     p_search.add_argument("-l", "--limit", type=int, default=5, help="Max results (default: 5)")
     p_search.add_argument("-o", "--output", help="Output file path")
+    p_search.add_argument("--api-url", default=None, help=_api_url_help)
     p_search.set_defaults(func=cmd_search)
 
     # --- scrape ---
@@ -204,6 +207,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_scrape.add_argument("--format", choices=["markdown", "json", "raw"], default="markdown", help="markdown=page text, json=AI-extracted data, raw=full API response (default: markdown)")
     p_scrape.add_argument("--timeout", type=float, default=120, help="Polling timeout in seconds (default: 120)")
     p_scrape.add_argument("-o", "--output", help="Output file path")
+    p_scrape.add_argument("--api-url", default=None, help=_api_url_help)
     p_scrape.set_defaults(func=cmd_scrape)
 
     # --- scrape-batch ---
@@ -213,6 +217,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_batch.add_argument("--country", default="us", help="Country code (default: us)")
     p_batch.add_argument("--timeout", type=float, default=180, help="Polling timeout in seconds (default: 180)")
     p_batch.add_argument("-o", "--output", help="Output file path")
+    p_batch.add_argument("--api-url", default=None, help=_api_url_help)
     p_batch.set_defaults(func=cmd_scrape_batch)
 
     # --- research ---
@@ -220,6 +225,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_research.add_argument("query", help="Research query/topic")
     p_research.add_argument("--timeout", type=float, default=600, help="Polling timeout in seconds (default: 600)")
     p_research.add_argument("-o", "--output", help="Output file path")
+    p_research.add_argument("--api-url", default=None, help=_api_url_help)
     p_research.set_defaults(func=cmd_research)
 
     # --- login ---
