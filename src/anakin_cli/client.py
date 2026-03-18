@@ -13,7 +13,7 @@ from anakin_cli.utils import (
 )
 
 DEFAULT_BASE_URL = "https://api.anakin.io/v1"
-USER_AGENT = "anakin-cli/0.1.0"
+USER_AGENT = "anakin-cli/0.2.0"
 
 
 class AnakinClient:
