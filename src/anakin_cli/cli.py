@@ -21,19 +21,63 @@ from anakin_cli.utils import AnakinError, log, log_error, log_success, log_warni
 
 
 # ---------------------------------------------------------------------------
+# API URL resolution helpers
+# ---------------------------------------------------------------------------
+
+def resolve_api_url(args) -> str:
+    """Resolve API URL: --api-url flag > ANAKIN_API_URL env > config > default."""
+    import os
+    if args.api_url:
+        url = args.api_url
+        # Ensure /v1 suffix
+        if not url.rstrip("/").endswith("/v1"):
+            url = url.rstrip("/") + "/v1"
+        return url
+    env_url = os.environ.get("ANAKIN_API_URL")
+    if env_url:
+        if not env_url.rstrip("/").endswith("/v1"):
+            env_url = env_url.rstrip("/") + "/v1"
+        return env_url
+    from anakin_cli.auth import load_config
+    config = load_config()
+    config_url = config.get("api_url")
+    if config_url:
+        if not config_url.rstrip("/").endswith("/v1"):
+            config_url = config_url.rstrip("/") + "/v1"
+        return config_url
+    return "https://api.anakin.io/v1"
+
+
+def is_self_hosted(api_url: str) -> bool:
+    """Check if the API URL points to a self-hosted instance."""
+    return "localhost" in api_url or "127.0.0.1" in api_url or "0.0.0.0" in api_url
+
+
+# ---------------------------------------------------------------------------
 # Subcommand handlers
 # ---------------------------------------------------------------------------
 
 def cmd_search(args):
     """Synchronous AI web search."""
-    client = AnakinClient(require_api_key())
+    api_url = resolve_api_url(args)
+    if is_self_hosted(api_url):
+        log_warning("Search requires the Anakin hosted API.")
+        log("Get a free API key at [bold]https://anakin.io/dashboard[/bold]")
+        log("Then run: [bold]anakin login --api-key 'ak-xxx'[/bold]")
+        sys.exit(0)
+    client = AnakinClient(require_api_key(), base_url=api_url)
     result = client.search(args.query, limit=args.limit)
     output_result(result, args.output)
 
 
 def cmd_scrape(args):
     """Scrape a single URL (async with polling)."""
-    client = AnakinClient(require_api_key())
+    api_url = resolve_api_url(args)
+    if is_self_hosted(api_url):
+        api_key = get_api_key()  # None is OK for self-hosted
+    else:
+        api_key = require_api_key()
+    client = AnakinClient(api_key, base_url=api_url)
     use_extract = args.format == "json"
     job = client.start_url_scrape(
         args.url,
@@ -64,7 +108,12 @@ def cmd_scrape(args):
 
 def cmd_scrape_batch(args):
     """Scrape multiple URLs at once (async with polling)."""
-    client = AnakinClient(require_api_key())
+    api_url = resolve_api_url(args)
+    if is_self_hosted(api_url):
+        api_key = get_api_key()  # None is OK for self-hosted
+    else:
+        api_key = require_api_key()
+    client = AnakinClient(api_key, base_url=api_url)
     if len(args.urls) > 10:
         log_warning("Batch endpoint supports max 10 URLs. Truncating.")
         args.urls = args.urls[:10]
@@ -85,7 +134,13 @@ def cmd_scrape_batch(args):
 
 def cmd_research(args):
     """Deep agentic research (async, may take 1-5 minutes)."""
-    client = AnakinClient(require_api_key())
+    api_url = resolve_api_url(args)
+    if is_self_hosted(api_url):
+        log_warning("Research requires the Anakin hosted API.")
+        log("Get a free API key at [bold]https://anakin.io/dashboard[/bold]")
+        log("Then run: [bold]anakin login --api-key 'ak-xxx'[/bold]")
+        sys.exit(0)
+    client = AnakinClient(require_api_key(), base_url=api_url)
     log("Starting agentic search (this may take 1-5 minutes)...")
     job = client.start_agentic_search(args.query)
     job_id = job.get("job_id") or job.get("jobId") or job.get("id")
@@ -130,6 +185,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Anakin.io web scraping, search, and research CLI",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument("--api-url", default=None, help="API base URL (default: https://api.anakin.io/v1). Use http://localhost:8080/v1 for self-hosted.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # --- search ---

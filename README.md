@@ -42,6 +42,24 @@ anakin scrape-batch "https://a.com" "https://b.com" -o batch.json
 anakin research "comparison of web frameworks 2025" -o report.json
 ```
 
+## Self-Hosted Mode
+
+Use `anakin-cli` with a self-hosted [AnakinScraper OSS](https://github.com/AnakinAI/anakinscraper-oss) instance:
+
+```bash
+# Start the OSS server
+git clone https://github.com/AnakinAI/anakinscraper-oss.git && cd anakinscraper-oss && make up
+
+# Scrape via your local instance (no API key needed)
+anakin scrape "https://example.com" --api-url http://localhost:8080
+
+# Or set it as your default
+export ANAKIN_API_URL="http://localhost:8080"
+anakin scrape "https://example.com"
+```
+
+Self-hosted mode supports `scrape` and `scrape-batch`. For `search` and `research`, use the hosted API with an API key.
+
 ## Commands
 
 | Command | Description |
