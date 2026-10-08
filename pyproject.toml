@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "anakin-cli"
-version = "0.2.0"
-description = "CLI for Anakin.io web scraping, search, and research API"
+version = "0.3.0"
+description = "CLI for Anakin.io: scrape, crawl, search, Wire actions, monitoring and AI visibility"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -17,6 +17,8 @@ keywords = [
     "data-extraction",
     "cli",
     "ai",
+    "wire",
+    "monitoring",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -31,12 +33,25 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Utilities",
 ]
-dependencies = ["requests>=2.28", "rich>=13.0"]
+dependencies = ["anakin-sdk>=0.2.0,<0.3", "rich>=13.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "respx>=0.21", "ruff>=0.5"]
 
 [project.urls]
 Homepage = "https://anakin.io"
 Repository = "https://github.com/Anakin-Inc/anakin-cli"
-Documentation = "https://anakin.io/docs"
+Documentation = "https://anakin.io/docs/sdks/cli"
 
 [project.scripts]
 anakin = "anakin_cli.cli:main"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
