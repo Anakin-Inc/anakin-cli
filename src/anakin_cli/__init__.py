@@ -1,3 +1,3 @@
-"""Anakin CLI — web scraping, search, and research powered by Anakin.io."""
+"""Anakin CLI: scraping, search, Wire actions, monitoring and AI visibility, powered by anakin-sdk."""
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

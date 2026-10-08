@@ -4,12 +4,12 @@
 [![Python](https://img.shields.io/pypi/pyversions/anakin-cli)](https://pypi.org/project/anakin-cli/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Command-line interface for [Anakin.io](https://anakin.io)'s web scraping, search, and research API.
+Command-line interface for [Anakin.io](https://anakin.io): scrape and crawl websites, run pre-built **Wire** actions on hundreds of sites, search, research, monitor pages for changes, and compare what AI engines say. Built on the official [`anakin-sdk`](https://github.com/Anakin-Inc/anakin-py).
 
 ## Requirements
 
 - Python 3.10 or higher
-- An Anakin API key ([get one here](https://anakin.io/dashboard))
+- An Anakin API key for most commands ([get one free, 300 credits](https://anakin.io/signup)). `scrape` and `wire discover` also work without one.
 
 ## Install
 
@@ -20,91 +20,99 @@ pip install anakin-cli
 ## Quick Start
 
 ```bash
-# Authenticate
-anakin login --api-key "ak-your-key-here"
+# No key needed: scrape a page, find a Wire action
+anakin scrape "https://example.com"
+anakin wire discover "top phones on walmart"
 
-# Verify
+# Authenticate for everything else
+anakin login --api-key "ak-your-key-here"
 anakin status
 
-# Search the web
-anakin search "python async best practices"
+# Wire: structured data from a known site
+anakin wire catalog walmart
+anakin wire run walmart_search -p query=phones -p limit=5
 
-# Scrape a page to markdown
-anakin scrape "https://example.com" -o page.md
-
-# Extract structured data (AI-powered)
+# Scrape, batch, map, crawl
 anakin scrape "https://example.com/product" --format json -o product.json
-
-# Batch scrape multiple URLs
 anakin scrape-batch "https://a.com" "https://b.com" -o batch.json
+anakin map "https://docs.example.com" --links-only
+anakin crawl "https://docs.example.com" --max-pages 50 --include "/guides/*" -o site.json
 
-# Deep research (1-5 minutes)
-anakin research "comparison of web frameworks 2025" -o report.json
+# Search and deep research (1-5 minutes)
+anakin search "python async best practices"
+anakin research "comparison of vector databases" -o report.json
+
+# Monitor a page; compare AI engine answers
+anakin monitor create "https://example.com/pricing" --interval 60 --ai
+anakin ai-visibility search "best web scraping api"
 ```
 
-## Self-Hosted Mode
-
-Use `anakin-cli` with a self-hosted [AnakinScraper OSS](https://github.com/AnakinAI/anakinscraper-oss) instance:
+Every command prints JSON (or plain text for page content) to stdout, and progress to stderr, so piping works:
 
 ```bash
-# Start the OSS server
-git clone https://github.com/AnakinAI/anakinscraper-oss.git && cd anakinscraper-oss && make up
-
-# Scrape via your local instance (no API key needed)
-anakin scrape "https://example.com" --api-url http://localhost:8080
-
-# Or set it as your default
-export ANAKIN_API_URL="http://localhost:8080"
-anakin scrape "https://example.com"
+anakin wire run hn_stories -p limit=5 | jq '.[0].title'
 ```
-
-Self-hosted mode supports `scrape` and `scrape-batch`. For `search` and `research`, use the hosted API with an API key.
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `search` | AI-powered web search (instant) |
-| `scrape` | Scrape a single URL — markdown, JSON, or raw |
+| `scrape` | Scrape one URL: markdown, html, AI-extracted JSON, links, summary or raw. `--schema`, `--actions`, `--screenshot FILE`. Works without a key. |
 | `scrape-batch` | Scrape up to 10 URLs at once |
-| `research` | Deep agentic research (1-5 min) |
-| `login` | Save your API key |
-| `status` | Check version and auth status |
+| `map` | Discover URLs on a site |
+| `crawl` | Crawl a site and return each page's markdown |
+| `search` | AI web search (instant) |
+| `research` | Deep agentic research (1-5 min), optional `--schema` |
+| `job get <type> <id>` | Fetch any async job (scrape, batch, map, crawl, research, wire, ai-visibility) |
+| `wire discover / catalogs / catalog` | Find Wire actions (no key needed) |
+| `wire run <action_id>` | Run an action: `-p key=value`, `--params @file.json`, `--credential-id`, `--zero-touch` |
+| `wire identities / login / download` | Site accounts, sign-in (password prompted, never stored), file results |
+| `wire build / build-status` | Request actions for a site not in the catalog |
+| `monitor create / list / pause / resume / run / changes / snapshots / deliveries / test-alert / delete` | Website monitoring (page, site or Wire scope) |
+| `ai-visibility search / sources / list` | Ask ChatGPT, Gemini and Google AI Overview the same question |
+| `webhooks list / create / delete / test / deliveries / events / secret` | Webhook endpoints and delivery log |
+| `sessions list / delete` | Saved browser login sessions |
+| `login` / `status` | Save your key; show version, API URL and auth status |
+
+Run `anakin <command> --help` for every option.
 
 ## Scrape Formats
 
-The `scrape` command supports three output formats via `--format`:
+| `--format` | What you get |
+|--------|-------------|
+| `markdown` (default) | Clean readable page text |
+| `json` | AI-extracted structured data (add `--schema` to choose the fields) |
+| `html` | Raw HTML |
+| `links` | `[{href, text}]` |
+| `summary` | AI summary of the page |
+| `raw` | The full result object |
 
 ```bash
-# Default — clean page text
-anakin scrape "https://example.com"
-
-# AI-extracted structured data
-anakin scrape "https://example.com/product" --format json -o data.json
-
-# Full API response (for debugging)
-anakin scrape "https://example.com" --format raw -o debug.json
+--browser            # Headless browser (JS-heavy sites)
+--country CC         # Proxy country (default: us)
+--session-id ID      # Saved browser session (login-protected pages)
+--actions JSON       # Click/scroll/type before capture
+--screenshot FILE    # Also save a PNG
+--fresh              # Skip the cache
+--timeout SECS       # Max wait (default: 120)
+-o, --output FILE    # Save output to a file
 ```
 
-| Format | What you get | Size |
-|--------|-------------|------|
-| `markdown` (default) | Clean readable page text | Small |
-| `json` | AI-extracted structured data only | Small |
-| `raw` | Full API response (html, metadata, everything) | Large |
+## Self-Hosted Mode
 
-### Other scrape options
+Point the CLI at a self-hosted AnakinScraper instance (no API key needed):
 
 ```bash
---browser          # Use headless browser (for JS-heavy sites)
---country CC       # Country code (default: us)
---session-id ID    # Session ID for authenticated scraping
---timeout SECS     # Polling timeout in seconds (default: 120)
--o, --output FILE  # Save output to file
+anakin scrape "https://example.com" --api-url http://localhost:8080
+# or
+export ANAKIN_API_URL="http://localhost:8080"
 ```
+
+Self-hosted mode supports `scrape`, `scrape-batch`, `map` and `crawl`. Search, research, Wire and AI visibility need the hosted API.
 
 ## Authentication
 
-Get your API key at [anakin.io/dashboard](https://anakin.io/dashboard).
+Get a free API key (300 credits) at [anakin.io/signup](https://anakin.io/signup).
 
 **Option A** — Login command (recommended):
 ```bash
@@ -116,21 +124,22 @@ anakin login --api-key "ak-your-key-here"
 export ANAKIN_API_KEY="ak-your-key-here"
 ```
 
-If no key is configured, the CLI will prompt you to enter one interactively.
+Without a key, `scrape` and `wire discover`/`catalogs`/`catalog` use the free keyless tier. Other commands prompt for a key when run in a terminal.
 
 ## Error Handling
 
-The CLI provides clear error messages for common issues:
+Errors print a one-line reason plus a hint, and exit non-zero:
 
-| Error | Cause | Fix |
-|-------|-------|-----|
-| `Authentication failed (401)` | Invalid or missing API key | Run `anakin login --api-key "ak-xxx"` |
-| `Plan upgrade required (402)` | Feature not available on your plan | Visit [anakin.io/pricing](https://anakin.io/pricing) |
-| `Rate limit exceeded (429)` | Too many requests | Wait a few seconds and retry |
-| `Job did not complete within Xs` | Scrape/research timed out | Increase with `--timeout 300` |
-| `Job failed` | Server could not process the URL | Check if the URL is accessible |
+| Error | Fix shown |
+|-------|-----|
+| `401` invalid key | `anakin login --api-key ...` |
+| `402` out of credits / keyless tier unavailable | Top-up or signup link |
+| Wire `AUTH_REQUIRED` | The URL to connect the site account |
+| Wire `AUTH_EXPIRED` | Run `anakin wire login` again |
+| `429` rate limited | How long to wait |
+| Job timed out | Raise `--timeout`, or `anakin job get <type> <id>` later |
 
-All errors exit with code `1`. Success exits with code `0`.
+Exit codes: `0` success, `1` API/job error, `2` bad arguments or input files, `130` interrupted.
 
 ## Tips
 
@@ -146,7 +155,7 @@ All errors exit with code `1`. Success exits with code `0`.
 - Use `-o` to save output to a file. Without it, output goes to stdout.
 - All progress/status messages go to stderr, so piping works cleanly:
   ```bash
-  anakin scrape "https://example.com" | jq '.title'
+  anakin scrape "https://example.com" --format raw | jq '.links'
   ```
 
 ## Documentation
